@@ -1,3 +1,2 @@
 # git ignore
-.log
-/RayTracingTools/build/  # ignore build dir
+/RayTracingTools/build  # ignore build dir
