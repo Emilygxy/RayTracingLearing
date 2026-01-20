@@ -2,13 +2,65 @@
 #include "Ray.h"
 #include "PPMLoader.h"
 
-color ray_color(const ray& r)
-{
-    //return color(0.0f,0.0f,0.0f);
-    vec3 unit_direction = Normalize(r.direction());
+#define Surface_Normals_and_Multiple_Objects
+
+#ifdef Ray_Sphere_Intersection
+bool hit_sphere(const point3& center, double radius, const ray& r) {
+    vec3 oc = center - r.origin();
+    auto a = dot(r.direction(), r.direction());
+    auto b = -2.0 * dot(r.direction(), oc);
+    auto c = dot(oc, oc) - radius * radius;
+    auto discriminant = b * b - 4 * a * c;
+    return (discriminant >= 0);
+}
+
+color ray_color(const ray& r) {
+    if (hit_sphere(point3(0, 0, -1), 0.5, r))
+        return color(1, 0, 0);
+
+    vec3 unit_direction = unit_vector(r.direction());
     auto a = 0.5 * (unit_direction.y() + 1.0);
     return (1.0 - a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0);
 }
+#endif // Ray_Sphere_Intersection
+
+#ifdef Surface_Normals_and_Multiple_Objects
+color ToColor(vec3 normal)
+{
+    return 0.5f * color(normal.x() + 1, normal.y() + 1, normal.z() + 1);
+}
+
+float hit_sphere(const point3& center, float radius, const ray& r) {
+    vec3 oc = center - r.origin();
+    auto a = r.direction().length_squared();
+    auto h = Dot(r.direction(), oc);
+    auto c = oc.length_squared() - radius * radius;
+    auto discriminant = h * h - a * c;
+
+    if (discriminant < 0) {
+        return -1.0;
+    }
+    else {
+        return (h - std::sqrt(discriminant)) / a;
+    }
+}
+
+color ray_color(const ray& r)
+{
+    point3 sphere_center = point3(0, 0, -1);
+    float radius = 0.5f;
+    auto t = hit_sphere(sphere_center, radius, r);
+    if (t > 0.0f) {
+        vec3 N = Normalize(r.at(t) - sphere_center);
+        return ToColor(N);
+    }
+
+    //return color(0.0f,0.0f,0.0f);
+    vec3 unit_direction = Normalize(r.direction());
+    auto a = 0.5f * (unit_direction.y() + 1.0f);
+    return (1.0f - a) * color(1.0f, 1.0f, 1.0f) + a * color(0.5f, 0.7f, 1.0f);
+}
+#endif // Ray_Sphere_Intersection
 
 int main()
 {
